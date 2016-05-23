@@ -1,0 +1,133 @@
+<krpano>
+<style name="dragable_hotspot_style" url="%SWFPATH%/images/hotspot.png"/>
+<style name="dragable_hotspot_style_selected" url="%SWFPATH%/images/hotspot_selected.png"/>
+<style name="dragable_hotspot_style_origin" url="%SWFPATH%/images/hotspot.png"/>
+<data name="hotspots_data"></data>
+<data name="hotspots_num"></data>
+<!-- 初始化热点数据 -->
+<action name="init_hotspot_data">
+	plugin[netdata].loadconfig(net_config);
+	set(data[hotspots_data].content,get(net_config));
+	//trace(get(net_config));
+	release_data();
+</action>
+<!-- 通过初始化数据生成所有热点 -->
+<action name="release_data">
+	initUnVisibleHotspot();
+	txtsplit(data[hotspots_data].content,'==',arr);
+	for(set(i,0),i LT calc(arr.count-1),inc(i),
+			txtsplit(arr[get(i)].value,'|',scene_name,hotspot_name,hot_ath,hot_atv);
+			my_create_hotspot_bydata(get(scene_name),get(hotspot_name),get(hot_ath),get(hot_atv));
+	);
+</action>
+<action name="initUnVisibleHotspot">
+	addhotspot(unvisible_hotspot);
+	switch(hotspot[unvisible_hotspot].keep);
+	switch(hotspot[unvisible_hotspot].visible);
+	switch(hotspot[unvisible_hotspot].enabled);
+</action>
+<!-- 通过数据生成单个热点 -->
+<action name="my_create_hotspot_bydata">
+	addhotspot(%2);
+	copy(s,hotspot[%2]);
+	s.loadstyle(dragable_hotspot_style_origin);
+	set(s.ath,%3);
+	set(s.atv,%4);
+	set(s.ondown,'draghotspot()');
+	txtadd(click_func_name,'hotspot_clicked(',%2,')');
+	trace('click hotspot action name = ',click_func_name);
+	set(s.onclick,get(click_func_name));
+	set(s.zorder,100);
+</action>
+<action name="clear_selected_state">
+	for(set(i,0),i LT hotspot.count,inc(i),
+		//trace(calc('hotname_'+i));
+		//trace(get(hotspot[calc('hotname_'+i)].selected));
+		if(
+			hotspot[calc('hotname_'+i)].selected	
+		,
+			//trace(get(hotspot[calc('hotname_'+i)].selected));
+			set(hotspot[calc('hotname_'+i)].url,'%SWFPATH%/images/hotspot.png');
+			switch(hotspot[calc('hotname_'+i)].selected);
+		);
+	);
+</action>
+<action name="hotspot_clicked">
+	delayedcall(0.2, delay_clicked(%1) );
+	delayedcall(0.1, clear_selected_state() );
+	delayedcall(0.5,showPanoList());
+</action>
+<action name="delay_clicked">
+	copy(curr_hot,hotspot[%1]);
+	curr_hot.loadstyle(dragable_hotspot_style_selected);
+	set(curr_hot.selected,true);
+	invalidatescreen();
+</action>
+<!-- 通过ui按钮点击后，生成一个热点到当前视窗中心 -->
+<action name="my_create_hotspot">
+	txtsplit(data[hotspots_data].content,'==',arr);
+	set(h_num,calc(arr.count-1));
+	inc(h_num);
+	set(data[hotspots_num].content,get(h_num));
+	set(hot_name,calc('hotname_'+h_num));
+	addhotspot(get(hot_name));
+	copy(s,hotspot[get(hot_name)]);
+	s.loadstyle(dragable_hotspot_style);
+	set(s.parent,get(scene[0]));
+	set(s.ath,get(view.hlookat));
+	set(s.atv,get(view.vlookat));
+	set(s.ondown,'draghotspot()');
+	//set(s.onclick,'my_list_panos()');
+	set(s.zorder,100);
+	set(s.keep,true);
+	save_data(get(xml.scene),get(hot_name),get(s.ath),get(s.atv));
+</action>
+<!-- 保存新加热点信息到data标签中 -->
+<action name="save_data">
+	set(h_data,get(data[hotspots_data].content));
+	<!--sceneName_hotspotName_ath_atv-->
+	txtadd(crr_hotspot_data,%1,'|',%2,'|',%3,'|',%4);	
+	trace(crr_hotspot_data);
+	txtadd(h_data,get(h_data),get(crr_hotspot_data),'==');
+	set(data[hotspots_data].content,get(h_data));
+</action>
+<!-- 显示场景信息 -->
+<action name="show_scene_info">
+	showlog();
+trace(xml.url);
+trace(xml.scene);	
+trace(xml.content);
+trace(xml.view);
+trace(scene[0]);
+
+</action>
+<!-- 热点可拖拽 -->
+<action name="draghotspot">
+		spheretoscreen(ath, atv, hotspotcenterx, hotspotcentery, 'l');
+		sub(drag_adjustx, mouse.stagex, hotspotcenterx);
+		sub(drag_adjusty, mouse.stagey, hotspotcentery);
+		asyncloop(pressed,
+			sub(dx, mouse.stagex, drag_adjustx);
+			sub(dy, mouse.stagey, drag_adjusty);
+			screentosphere(dx, dy, ath, atv);
+			<!--print_hotspot_pos();-->
+			update_hotspot_data(get(xml.scene),get(name),get(ath),get(atv));
+		  );
+</action>
+<!-- 热点拖拽后，更新坐标信息到data标签中 -->
+<action name="update_hotspot_data">
+	txtadd(search_prefix,%1,'|',%2);
+	indexoftxt(idx,get(data[hotspots_data].content),get(search_prefix));
+	indexoftxt(idx2,get(data[hotspots_data].content),'==',get(idx));
+	subtxt(old_txt,get(data[hotspots_data].content),get(idx),calc(idx2-idx));
+	txtadd(new_txt,%1,'|',%2,'|',%3,'|',%4);
+	copy(sdata,data[hotspots_data].content);
+	txtreplace(replaced_data,sdata,get(old_txt),get(new_txt));
+	set(data[hotspots_data].content,get(replaced_data));
+</action>
+<!-- 保存热点信息到数据库中 -->
+<action name="save_hotspot_set_to_db">
+	trace('save_hotspot_set_to_db=',get(data[hotspots_data].content));
+	plugin[netdata].updateconfig(get(data[hotspots_data].content));
+</action>
+</krpano>

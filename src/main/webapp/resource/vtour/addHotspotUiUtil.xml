@@ -1,0 +1,244 @@
+<krpano>
+	<style name="textfield" url="%SWFPATH%/plugins/textfield.swf" background="false" css="font-size:14px; color:#FFFFFF; font-style:italic;" />
+	<style name="scrollarea" url.flash="%SWFPATH%/plugins/scrollarea.swf" url.html5="%SWFPATH%/plugins/scrollarea.js" />
+	<style name="button" url="%SWFPATH%/plugins/textfield.swf" background="true" backgroundalpha="0.2" css="font-size:14px; color:#FFFFFF;" border="true" bordercolor="0xFFFFFF" padding="2 4" />
+	<style name="pano_thumb_style" align="lefttop" x="10" y="5" width="80" height="80" alpha="1"  css="padding:50px" bgborder="4 0xFFFFFF 0.8"/>
+	<style name="dragable" ondown="copy(sx,x);copy(sy,y);copy(mx,mouse.x);copy(my,mouse.y);asyncloop(pressed,set(x,calc(sx-mx+mouse.x));set(y,calc(sy-my+mouse.y)););" />
+	<style name="my_ui_container_style" keep="true" type="container" width="200" height.normal="410" height.mobile="180" align="left" bgcolor="get:skin_settings.design_bgcolor" bgalpha="get:skin_settings.design_bgalpha" bgborder="get:skin_settings.design_bgborder" bgroundedge="get:skin_settings.design_bgroundedge" bgshadow="get:skin_settings.design_bgshadow" bgcapture="true" x="50" y="40" style="dragable"/>
+	<style name="my_ui_title_style" style="textfield"  align="top" y="4" background="false" enabled="false" />
+	<style name="my_ui_scroll_container" type="container"  align="top" y="30" width="-20" height="-40" bgborder="1 0xFFFFFF 0.8"/>
+	<style name="my_pano_container" type="container" onover="set(bgborder,'2 0xFFFFFF 1.0');" onout="set(bgborder,'1 0xFFFFFF 0.8');" align="top" y="30" width="-20" height="-40" bgborder="1 0xFFFFFF 0.8"/>
+	<style name="pano_bg"  style="button" 
+		onover="if(alpha LT 1,set(alpha,0.7););" 
+		onout="if(alpha LT 1,set(alpha,0.5););" 
+		align="top" 
+		y="30" 
+		width="150" 
+		height="90" 
+		alpha="0.5"
+		clore="0xFFFFFF"
+		bgborder="3 0xFFFFFF 0.8"/>
+	<style name="my_ui_scroll_body" style="scrollarea" direction="v" width="100%" height="600" align="top" y="0" />
+	<style name="showPanoListBtnBg_style" keep="true" 
+		style="button|dragable" 
+		x="50" 
+		y="40" 
+		width="180" 
+		height="30" 
+		html="link pano" 
+		css="text-align:center;font-size:24px; color:#FFFFFF;" 
+		align="lefttop" 
+		backgroundalpha="0.8"
+		backgroundcolor="0x000000"
+		/>
+	<style name="checkbtn_style" keep="true" 
+		style="button|dragable" 
+		x="-45" 
+		y="185" 
+		width="80" 
+		height="30" 
+		html="do" 
+		css="text-align:center;font-size:24px; color:#FFFFFF;" 
+		align="button" 
+		backgroundalpha="1"
+		backgroundcolor="0x000000"
+		/>
+	<style name="cancelbtn_style" keep="true" 
+		style="button|dragable" 
+		x="45" 
+		y="185" 
+		width="80" 
+		height="30" 
+		html="cancel" 
+		css="text-align:center;font-size:24px; color:#FFFFFF;" 
+		align="button" 
+		backgroundalpha="1"
+		backgroundcolor="0x000000"
+		/>
+	<!-- 初始化ui界面 -->
+	<action name="my_init_ui">
+		my_create_ui_container('ui_container');
+		my_create_ui_title('ui_title','add hotspots',ui_container);
+		my_create_ui_scroll_container('ui_scroll_container',ui_container,my_ui_scroll_container);
+		my_create_ui_scroll_body('ui_scroll_body',ui_scroll_container);
+		my_create_ui_item('ui_item_hotspot','add hotspot',1,'my_create_hotspot()');
+		my_create_ui_item('ui_item_save_hotspot','save hotspot',2,'save_hotspot_set_to_db()');
+	</action>
+	<!-- 创建可操作按钮 -->
+	<action name="my_create_ui_item">
+		addlayer(%1);
+		copy(item,layer[%1]);
+		set(item.parent,ui_scroll_body);
+		item.loadstyle(button);
+		set(item.html,%2);
+		set(item.align,top);
+		set(ty,calc((%3-1)*30+8));
+		set(ty2,calc(%3*30+8));
+		set(item.y,get(ty));
+		set(item.keep,true);
+		set(item.onclick,%4);
+		set(layer[ui_scroll_body].height,get(ty2));
+		
+	</action>
+	<!--创建下拉体-->
+	<action name="my_create_ui_scroll_body">
+		set(uisc_name,%1);
+		addlayer(get(uisc_name));
+		copy(usb,layer[get(uisc_name)]);
+		set(usb.parent,%2);
+		usb.loadstyle(my_ui_scroll_body);
+		set(usb.html,"hotspot");
+		set(usb.keep,true);
+	</action>
+	<!--创建下拉容器-->
+	<action name="my_create_ui_scroll_container">
+		set(uisc_name,%1);
+		addlayer(get(uisc_name));
+		copy(usc,layer[get(uisc_name)]);
+		set(usc.parent,%2);
+		usc.loadstyle(%3);
+		set(usc.keep,true);
+	</action>
+	<!--创建title-->
+	<action name="my_create_ui_title">
+		set(uit_name,%1);
+		addlayer(get(uit_name));
+		copy(ut,layer[get(uit_name)]);
+		set(ut.parent,%3);
+		ut.loadstyle(my_ui_title_style);
+		set(ut.html,%2);
+		set(ut.keep,true);
+	</action>
+	<!-- 创建ui容器 -->
+	<action name="my_create_ui_container">
+		set(uic_name,%1);
+		addlayer(get(uic_name));
+		copy(uc,layer[get(uic_name)]);
+		uc.loadstyle(my_ui_container_style);
+	</action>
+	<!-- 加载新场景时，清楚ui交互界面 -->
+	<action name="clearPanoList">
+ 		removelayer(list_container,true);
+	</action>
+	<!-- 创建关联全景图按钮 -->
+	<action name="showPanoListBtn">
+		addlayer(showPanoListBtnBg);
+		copy(btn,layer[showPanoListBtnBg]);
+		btn.loadstyle(showPanoListBtnBg_style);
+		set(btn.onclick,'showPanoList()');
+	</action>
+	 <!-- 显示全景图列表 -->
+	<action name="showPanoList">
+		if(layer[list_container]!==null,
+			switch(layer[list_container].visible);
+			,
+			my_list_panos());
+	</action>
+		<!-- 创建热点可关联全景图选择列表 -->
+	<action name="my_list_panos">
+		my_create_ui_container('list_container');
+		set(layer[list_container].align,center);
+		
+		my_create_ui_title('list_title','list panos',list_container);
+		my_create_ui_scroll_container('list_scroll_container',list_container,my_ui_scroll_container);
+		my_create_ui_scroll_body('list_scroll',list_scroll_container);
+		my_create_pano_list_item('pano1',list_scroll,'%SWFPATH%/panos/image1.tiles/thumb.jpg',1);
+		my_create_pano_list_item('pano2',list_scroll,'%SWFPATH%/panos/image2.tiles/thumb.jpg',2);
+		check_cansole_btn();
+		
+	</action>
+	<!-- 创建热点可关联全景图选择列表子项 -->
+	<action name="my_create_pano_list_item">
+		addlayer(panobg%4);
+		copy(usc,layer[panobg%4]);
+		set(usc.parent,%2);
+		usc.loadstyle(pano_bg);
+		set(usc.keep,true);
+		set(usc.height,90);
+		set(usc.y,calc((%4-1)*100+18));
+		txtadd(func_name,'select_pano(',panobg%4,')');
+		set(usc.onclick,get(func_name));
+		pano_thumb(%1,%2,%3,%4);
+	</action>
+	<!-- 创建全景缩略图 -->
+	<action name="pano_thumb">
+		addlayer(%1);
+		copy(item,layer[%1]);
+		set(item.parent,layer[panobg%4]);
+		item.loadstyle(pano_thumb_style);
+		set(item.url,%3);
+		txtadd(func_name,'select_pano(',panobg%4,')');
+		set(item.onclick,get(func_name));
+		set(list_height,calc(%4*175+8));
+		set(layer[%2].height,get(list_height));
+	</action>
+	<!-- 选中全景图 -->
+	<action name="select_pano">
+		if(selected_pano!==null,set(selected_pano.alpha,0.5););
+		set(layer[%1].alpha,1);
+		copy(selected_pano,layer[%1]);
+		set(selected_pano.selected,true);
+		showOptionBtn();
+	</action>
+	<!-- 显示操作按钮 -->
+	<action name="showOptionBtn">
+		set(layer[do_btn].visible,true);
+		set(layer[cancel_btn].visible,true);
+	</action>
+	<!-- 隐藏操作按钮 -->
+	<action name="hideOptionBtn">
+		set(layer[do_btn].visible,false);
+		set(layer[cancel_btn].visible,false);
+	</action>
+	<!-- 添加操作按钮 -->
+	<action name="check_cansole_btn">
+		addlayer(do_btn);
+		copy(dobtn,layer[do_btn]);
+		set(dobtn.parent,list_container);
+		dobtn.loadstyle(checkbtn_style);
+		set(dobtn.onclick,'do_link();');
+		
+		addlayer(cancel_btn);
+		copy(ccbtn,layer[cancel_btn]);
+		set(ccbtn.parent,list_container);
+		ccbtn.loadstyle(cancelbtn_style);
+		set(ccbtn.onclick,'hideOptionBtn();showPanoList();');
+		hideOptionBtn();
+	</action>
+	<!-- 点击关联全景do按钮 -->
+	<action name="do_link">
+		
+		for(set(i,0),i LT hotspot.count,inc(i),
+			if(
+				hotspot[calc('hotname_'+i)].selected	
+			,
+				trace(get(hotspot[calc('hotname_'+i)].name));
+				copy(hotName,hotspot[calc('hotname_'+i)].name);
+			);
+		);
+		for(set(j,0),j LT layer.count,inc(j),
+			//trace(get(layer[calc('panobg'+j)].selected),'---------',get(layer[calc('panobg'+j)].name));
+			if(
+				layer[calc('panobg'+j)].selected	
+			,
+				trace(get(layer[calc('panobg'+j)].name));
+				copy(panoName,layer[calc('panobg'+j)].name);
+			);
+		);
+		trace('do_link','   hotName=',get(hotName),'  panoName=',get(panoName));
+		
+		if(panoName=='panobg1',
+		
+			txtadd(loadname,'','loadscene(scene_image1)');
+			set(hotspot[get(hotName)].onclick,get(loadname));
+		);
+		if(panoName=='panobg2',
+		
+			txtadd(loadname,'','loadscene(scene_image2)');
+			set(hotspot[get(hotName)].onclick,get(loadname));
+		);
+		hideOptionBtn();showPanoList();
+	</action>
+	<events onnewscene="clearPanoList();showPanoListBtn()">
+</events>
+</krpano>

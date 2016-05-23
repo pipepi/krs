@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+      
+    <!-- 数据源 -->
+    <bean id="dataSource" name="dataSource"
+		class="com.mchange.v2.c3p0.ComboPooledDataSource" abstract="false"
+		lazy-init="default" autowire="default">
+	    <property name="driverClass"><value>com.mysql.jdbc.Driver</value></property>
+		<property name="jdbcUrl"><value>jdbc:mysql://localhost:3306/krs?useSSL=false&amp;characterEncoding=utf-8</value></property>
+		<property name="user"><value>krs</value></property>
+		<property name="password"><value>abc123</value></property>
+		  <!--连接池中保留的最小连接数。-->            
+		  <property name="minPoolSize" value="10" />
+		  <!--连接池中保留的最大连接数。Default: 15 -->         
+		  <property name="maxPoolSize" value="100" />        
+		  <!--最大空闲时间,1800秒内未使用则连接被丢弃。若为0则永不丢弃。Default: 0 -->               
+		  <property name="maxIdleTime" value="1800" />        
+		  <!--当连接池中的连接耗尽的时候c3p0一次同时获取的连接数。Default: 3 -->               
+		  <property name="acquireIncrement" value="3" />        
+		  <property name="maxStatements" value="1000" />         
+		  <property name="initialPoolSize" value="10" />          
+		  <!--每60秒检查所有连接池中的空闲连接。Default: 0 -->       
+		  <property name="idleConnectionTestPeriod" value="60" />          
+		  <!--定义在从数据库获取新连接失败后重复尝试的次数。Default: 30 -->       
+		  <property name="acquireRetryAttempts" value="30" />         
+		  <property name="breakAfterAcquireFailure" value="true" />             
+		  <property name="testConnectionOnCheckout" value="false" />
+	</bean>
+    <!-- 模版注入 --> 
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate"> 
+        <property name="dataSource"> 
+            <ref bean="dataSource" /> 
+        </property> 
+    </bean>
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager"
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+        p:dataSource-ref="dataSource" />  
+    </beans>
